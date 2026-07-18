@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - name: Restore
+        run: dotnet restore NetIntercom.sln
+      - name: Build
+        run: dotnet build NetIntercom.sln --no-restore --configuration Release
+      - name: Unit tests
+        run: dotnet test tests/NetIntercom.UnitTests --no-build --configuration Release
+      - name: Integration tests (Testcontainers + PostgreSQL)
+        run: dotnet test tests/NetIntercom.IntegrationTests --no-build --configuration Release
+
+  frontend:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        app: [inbox, widget]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install
+        working-directory: frontend/${{ matrix.app }}
+        run: npm install
+      - name: Build
+        working-directory: frontend/${{ matrix.app }}
+        run: npm run build

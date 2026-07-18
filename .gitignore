@@ -1,0 +1,10 @@
+bin/
+obj/
+*.user
+.vs/
+node_modules/
+dist/
+.env
+*.log
+TestResults/
+frontend/**/dist/

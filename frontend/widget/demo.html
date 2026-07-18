@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>NetIntercom widget demo host page</title>
+  </head>
+  <body style="font-family: sans-serif; padding: 40px">
+    <h1>Acme Corp — pricing</h1>
+    <p>This page pretends to be a customer site embedding the chat widget.</p>
+
+    <!-- Embed snippet (after `npm run build`, serve dist/netintercom-widget.js) -->
+    <script src="./dist/netintercom-widget.js"></script>
+    <script>
+      NetIntercomWidget.init({
+        apiBase: "http://localhost:5179",
+        // Identify a logged-in user (optional — omit for anonymous visitors):
+        // user: { externalId: "user-42", name: "Pat Doe", email: "pat@example.com" },
+      });
+    </script>
+  </body>
+</html>
