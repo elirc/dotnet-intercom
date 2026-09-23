@@ -1,0 +1,11 @@
+# Answer: J3 office hours endpoint
+
+1. **Owner.** `DirectoryController` already hosts admin writes (`SaveSlaPolicy`, `SaveRoutingRule` with `[Authorize(Policy = "Admin")]`, `DirectoryController.cs:29-38`). Put `[HttpPut("teams/{id:guid}/office-hours")]` there with the same attribute. The class-level `Agent` policy still applies. Both policies must pass, and admins carry both roles (`TokenService.cs:51-56`).
+2. **Time zones on Windows.** .NET 6+ accepts IANA IDs on Windows through ICU (bundled on Windows 10 1903+). `Asia/Manila` resolves, and so does `Singapore Standard Time`. Validation should call `TimeZoneInfo.TryFindSystemTimeZoneById` (.NET 8) and store the ID the admin sent. Tests shouldn't depend on a Windows-only ID. Use an IANA ID and test on both OSes, or skip on missing ICU.
+3. **Queued conversations.** Nothing. `RouteAsync` runs only when a conversation is created (`SendVisitorMessage.cs:83`). Queued, unassigned conversations stay where they are, so changing hours affects **new** conversations only. Nothing re-routes when an agent comes online either, which is its own product gap. Document it in the PR.
+4. **JSON vs tables.** Keep JSON: it's read-mostly, always loaded with the team, and gets no queries of the form "which teams are open at X". Move to tables: you get validation at the DB level, you can query "open now" in SQL for reports, and there are no deserialization surprises (`FromJson` would throw on bad JSON *during routing*, which is a 500 on a visitor's first message).
+5. **Clock.** The router uses `IClock` (`ConversationRouter.cs:43`), so a fake clock makes the unit test deterministic. The existing integration test isn't deterministic: "billing invoice" routes to Billing between 08:00 and 18:00 UTC on weekdays and falls back to Support otherwise, which is why it only asserts `teamName != null` (`HappyPathTests.cs:61`). That's a weak assertion hiding a time-dependent test.
+
+Validator: day is a valid enum, `Start < End`, no overlapping windows per day (nice-to-have), `windows.Count <= 21`.
+
+Rubric: Basic = endpoint + 400/404. Solid = + 403 test, TZ validation, fake-clock router test. Strong = + spots the time-dependent integration test and the no-re-route consequence.

@@ -1,0 +1,14 @@
+# Before your first production change to NetIntercom
+
+Read this before you open a PR. Each item is here because getting it wrong in this repo causes a specific failure.
+
+1. **There are two audiences and one database.** Every field you add to `ConversationDto` or `MessageDto` can reach a **visitor** through three paths: the visitor hub payload (`RealtimeNotifier.cs:32-37`), `POST /widget/session` and `POST /widget/messages`, which both return the full DTO. Before merging, list every serializer your field reaches. Internal notes must never leave agent surfaces. The filter is applied separately in each query (`WidgetQueries.cs:35`, `StartConversation.cs:81`), and no type enforces it.
+2. **Writes then pushes, never the other way round.** Handlers `SaveChangesAsync` first, then call `IRealtimeNotifier`. Hubs never write. If you add a hub method that writes, you've broken the "DB is source of truth" design the README promises.
+3. **Every widget handler re-checks ownership against the token's `visitor_id`.** Copy the `AnyAsync(c => c.Id == id && c.VisitorId == visitorId)` pattern. Don't fold it into a data filter (incident 004 shows why).
+4. **Presence is in memory and per process.** Anything that asks "who is online" (`IPresenceService`) is only correct on one node, and routing depends on it. Don't add a second consumer without reading `PresenceTracker.Compute`.
+5. **Time goes through `IClock`**, except in `PresenceTracker`/`PresenceSweeper`, which use `DateTime.UtcNow`. Tests that touch SLA or office hours must use a fake clock. The existing routing integration test passes or fails depending on UTC time of day.
+6. **Schema changes have no migration path yet.** `EnsureCreated` won't alter an existing database. A new column or index won't reach any environment that already has a DB. Adding the first migration (baseline) is a prerequisite project, so plan for it.
+7. **Background work runs in the API process** (the Hangfire server plus `PresenceSweeper`). A slow job shares CPU and the connection pool with requests. Recurring job ids must be constants (incident 003).
+8. **Config that is live everywhere:** `Seed:Enabled=true` and the Hangfire toggle sit in the base `appsettings.json`. The JWT key must come from the environment outside Development (`Infrastructure/DependencyInjection.cs:16-21`).
+9. **How to verify locally:** `docker compose up -d` → `dotnet run --project src/NetIntercom.Api` → the inbox dev server → build the widget and open `demo.html`. Unit tests don't need Docker. Integration tests do (Testcontainers).
+10. **Where your change probably goes:** new behavior → a MediatR command/query + validator in `Application/<Feature>/`, a thin controller action, domain rules as methods on the entity (not in the handler), and pushes through `IRealtimeNotifier`. Look at `ManageConversation.cs` for the house style.

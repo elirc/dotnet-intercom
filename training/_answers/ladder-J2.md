@@ -1,0 +1,13 @@
+# Answer: J2 transcript pagination
+
+1. **Index.** `IX_Messages_ConversationId_CreatedAtUtc` from `e.HasIndex(m => new { m.ConversationId, m.CreatedAtUtc })` (`AppDbContext.cs:88`). Postgres can scan a B-tree backwards, so `ORDER BY CreatedAtUtc DESC LIMIT 50` becomes an index scan plus a limit with no sort. Adding `Id` as a third column makes the `(CreatedAtUtc, Id)` tie-break index-served too.
+2. **Timestamp-only cursor bug.** `SaveChangesAsync` uses one `IClock.UtcNow` per handler call, and `SendVisitorMessage` sets `CreatedAtUtc = now` explicitly (`:98`). Messages created in one batch, or in two requests within the same microsecond (Postgres `timestamp` has µs precision), share a value. Page 1 ends on message A at `T`. Message B also has `T`. `before=T` uses `<`, so B is never returned (a gap). If you used `<=` instead, A comes back again (a duplicate). A composite cursor `(CreatedAtUtc, Id)` with the row-value comparison `(CreatedAtUtc, Id) < (@t, @id)` fixes it. EF: `m.CreatedAtUtc < t || (m.CreatedAtUtc == t && m.Id.CompareTo(id) < 0)`. Check that Npgsql translates `Guid.CompareTo`. If it doesn't, encode the cursor as `(ticks, id)` and compare on the server with `EF.Functions` or raw SQL.
+3. **Reverse after DESC LIMIT.** Query newest-first, take `limit`, then `.Reverse()` in memory so the array is oldest-first. The client prepends pages.
+4. **Include.** The sender name needs `AgentUser.DisplayName` or the visitor's name. The visitor is the same for the whole conversation. Load it once, then project `m.AgentUser.DisplayName` in the `Select`. `Include` is irrelevant when you project anyway: EF ignores Includes under a projection.
+5. **Default behavior.** The inbox build currently deployed calls with no params and expects the full transcript. Changing the default to "latest 50" silently truncates it for agents on old tabs until they reload. For an internal SPA that ships with the API this is usually acceptable: they deploy together, and a reload fixes it. Say so explicitly. The safe alternative is "no params = old behavior; `limit` present = new behavior". In both cases `?after=` must keep returning *all* newer messages.
+
+**Why not offset:** new messages arrive continuously, so `OFFSET 50` shifts under the reader (duplicates/gaps), and deep offsets scan and discard rows.
+
+**Validator:** `limit` in 1..200, `before` and `after` mutually exclusive (400 if both are set), cursor parse failure → 400.
+
+Rubric: Basic = works with limit/before. Solid = + tie-safe cursor, index-backed, back-compat for `after`. Strong = + explicit reasoning about deployed clients and the gap/duplicate proof.
