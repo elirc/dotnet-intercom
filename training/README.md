@@ -2,6 +2,8 @@
 
 A practice lab built on this repo's real code: a two-sided live chat with SignalR, Hangfire SLA sweeps, in-memory presence, an embeddable widget and an agent inbox. **You do the thinking.** Every solution is sealed in `_answers/`. Open an answer only after you've written your own.
 
+> **New to this repo? Start with `../learn/README.md`** (junior study route, on-ramp, agentic drills).
+
 > Existing learning material in this repo: `docs/upskill/` (47-file curriculum, good) and `docs/architecture-review.md` (a model review). Treat the review as an **answer key**: don't read it before `review/EXERCISE.md`. One of its claims (§2.3) is wrong, and `_answers/review.md` R5 explains why.
 
 ## Contents
@@ -9,11 +11,11 @@ A practice lab built on this repo's real code: a two-sided live chat with Signal
 |---|---|---|
 | `review/` | 60-min blind review + compare template | `EXERCISE.md`, `COMPARE.md` |
 | `incidents/` | 5 production incidents, each with a bug committed on its own branch | `001`–`005` |
-| `ladder/` | Tickets: junior J1–J3, mid M1–M4, senior S1–S3 | 10 files |
+| `ladder/` | Tickets: junior J1–J3, mid M1–M5 (M5 caching added in B08), senior S1–S3 | 11 files |
 | `navigation/` | Architecture with evidence, onboarding, trade-offs, a change request | 4 files |
 | `agentic/` | Spec → implementer agent → adversarial reviewer → your explanation | `WORKFLOW.md`, `VERIFY_AI_OUTPUT.md` |
 | `interview/` | Stories, 20 questions, system design, mock defense, flashcards | 5 files |
-| `_answers/` | Sealed solutions and rubrics, one per exercise | 20 files |
+| `_answers/` | Sealed solutions and rubrics, one per exercise | 21 files |
 
 ## Incident branches (check out with a worktree, never on your main tree)
 ```
