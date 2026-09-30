@@ -107,3 +107,8 @@ Twelve sessions. A ticket that takes longer than one sitting is split, so stop a
 
 ## Next repo
 **modular-monolith-with-ddd** (`Desktop\.netarchitectureproject\modular-monolith-with-ddd`, READ tier). Its outbox/inbox between modules is the grown-up version of what NetIntercom's S3 asks you to design. After that comes eShop, then gitvg/atlas (B02).
+
+
+## Extended current-source course
+
+Continue with the [extended course](extended-course/README.md), which adds source-grounded lessons, independent predictions, and separate solutions. Its README records the current installment and evidence boundaries.
