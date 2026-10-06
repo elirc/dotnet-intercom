@@ -31,6 +31,8 @@ git worktree add ../ni-inc-001 training/incidents/001-widget-note-leak
 
 Each branch is one plausible PR on top of `main` (f2198dd). All five compile, and the 27 existing unit tests pass on every branch. That's part of the lesson.
 
+> **Status 2026-10-06: these five branches are not on GitHub.** `git ls-remote origin` lists only `main`, and the incident commits named in `_answers/incident-00N.md` (8a0f386, 5cc8d8d, 0c89976, e813e94, daf7666) don't exist in a fresh clone. The build and test claims above came from the original local copy. From a clone, the `git worktree add` command fails. Until the branches are pushed, work each incident from its brief: reason about which change to the `main` code would cause the symptom, write it down, and only then compare with the answer file, which describes the injected diff. Every exercise that says "fails on the incident branch" needs you to re-create that diff first on a branch of your own.
+
 ## Suggested order (≈ 38–46 h)
 1. `navigation/ARCHITECTURE.md` + `ONBOARDING.md`: read with the code open (2 h).
 2. `review/EXERCISE.md` → `COMPARE.md` (2 h).
@@ -43,4 +45,4 @@ Each branch is one plausible PR on top of `main` (f2198dd). All five compile, an
 9. Interview kit last: `TECHNICAL_QUESTIONS` → `FLASHCARDS` → `PROJECT_STORIES` (fill from what you did) → `SYSTEM_DESIGN` → `MOCK_DEFENSE` (4 h).
 
 ## Running things
-Unit tests: `dotnet test tests/NetIntercom.UnitTests`. This machine only has the .NET 10 SDK and no .NET 8 runtime, so set `DOTNET_ROLL_FORWARD=Major` to run the net8 tests. Integration tests need Docker (Testcontainers Postgres).
+Unit tests: `dotnet test tests/NetIntercom.UnitTests`. The projects target `net8.0` (`Directory.Build.props`). If you have only a newer SDK and no .NET 8 runtime, set `DOTNET_ROLL_FORWARD=Major` to run them. Integration tests need Docker (Testcontainers Postgres).

@@ -2,6 +2,8 @@
 
 *Reviewed: 2026-06-11. Scope: full backend (`src/`), both frontends (`frontend/`), tests, CI, and runtime configuration.*
 
+> **Status note (2026-10-06):** the review text is unchanged. `src/`, `frontend/` and `tests/` haven't changed since the initial commit (f2198dd), and every `file:line` reference here still resolves. One known error: §2.3 says the losing sweep throws `DomainException` from `MarkBreached`'s guard. It doesn't. `SlaTimer` has no concurrency token (`AppDbContext.cs:95-99`), and each sweep loads `Running` timers into its own `DbContext` (`CheckSlaBreaches.cs:34-40`), so the in-memory guard passes in both runs. Both mark, save and notify without error, and the result is duplicate escalations, not a failed batch. See `training/_answers/review.md` R5. The suggested fix (a set-based `UPDATE … WHERE Status = Running`) still holds. This document is the answer key for `training/review/EXERCISE.md`, so don't read it before you finish that exercise.
+
 ## Verdict
 
 This is a well-built codebase that does what the README promises. The layering is honest (Domain has real invariants, Application is thin and consistent, Infrastructure is swappable), the "hubs are delivery-only, DB is source-of-truth" realtime design is the right call and is applied consistently, and the operational basics — problem details, correlation IDs, rate limiting, health checks, Testcontainers integration tests — are all present. The issues below are mostly the gaps you'd expect to find when an Intercom-style product moves past a single node and a trusting client: one real authentication hole in the widget identity model, a handful of authorization/consistency gaps, and a set of single-instance assumptions that should at least be written down.

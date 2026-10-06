@@ -7,18 +7,20 @@ NetIntercom is an Intercom-style support inbox. It's a .NET 8 API (`src/NetInter
 It's the portfolio's only **realtime + multi-replica background job** app. It's where you learn that "it works on one server" and "it works on three" are different claims.
 
 ## Known state of main
-Facts from `opusorganize/batch1report/projects/netintercom.md`. They were verified in B01, not re-run in this pass:
-- `main` builds (`dotnet build NetIntercom.sln`, 0 errors). Unit tests pass 27/27 with `DOTNET_ROLL_FORWARD=Major`, because the machine has only the .NET 10 runtime.
+These facts come from an earlier review report (B01) that is not part of this repo. Nothing was re-run in this pass:
+- `main` builds (`dotnet build NetIntercom.sln`, 0 errors). Unit tests pass 27/27 with `DOTNET_ROLL_FORWARD=Major`, because the review machine had only the .NET 10 runtime (the projects target `net8.0`; without a .NET 8 runtime you need the same flag).
 - The integration tests (`tests/NetIntercom.IntegrationTests`) need Docker/Testcontainers. **They were never run** in B01. Treat any "integration passes" claim as UNVERIFIED until you run them yourself.
 - Real defects on `main` (don't fix them unless a ticket asks you to):
   - `Seed:Enabled=true` sits in the **base** `src/NetIntercom.Api/appsettings.json:16-18`, so every environment seeds a known admin.
   - The widget never rejoins its `vconv:` SignalR group after a reconnect (`frontend/widget/src/Widget.tsx:52-58`). Ticket M3 covers it.
   - `docs/architecture-review.md` §2.3 is **wrong** about concurrent SLA sweeps. That doc is a gated answer key: don't open it before `training/review/EXERCISE.md`.
 - All 5 incident branches build. The existing test suite catches **none** of them, and that's the point.
+- **Status 2026-10-06: the incident branches were never pushed.** `git ls-remote origin` shows only `main`, so a fresh clone can't check them out and the `git worktree add` commands below fail. See the status note in `training/README.md` for how to work the incidents from their briefs in the meantime.
+- **Status 2026-10-06:** the concept-page links to `opusorganize/apprenticeship/curriculum/*.md` (here, in `00-onramp.md`, `01-agentic-practice.md` and ladder M5) point outside this repo and don't resolve from a clone. The page titles name the concept (idempotency, outbox, caching, query plans and so on), so look the topic up in any standard reference instead.
 
 ## Prerequisites
 Do these first. Each one takes 30–60 minutes.
-1. **The request pipeline:** controller → MediatR → handler. Read `src/NetIntercom.Api/Controllers/WidgetController.cs` and `src/NetIntercom.Application/Common/Behaviors.cs`, and be able to say where validation runs. Do netdrop's `learn/` first if you haven't: it teaches the same Api/Application/Domain/Infrastructure layering on a simpler app.
+1. **The request pipeline:** controller → MediatR → handler. Read `src/NetIntercom.Api/Controllers/WidgetController.cs` and `src/NetIntercom.Application/Common/Behaviors.cs`, and be able to say where validation runs. Do netdrop's `learn/` (the `elirc/dotnet-drop` repo) first if you haven't: it teaches the same Api/Application/Domain/Infrastructure layering on a simpler app.
 2. **EF Core queries, indexes, `Include`:** read [10 query plans](../../opusorganize/apprenticeship/curriculum/10-query-plans-and-indexes.md) and `AppDbContext.cs:72-97`.
 3. **Check-then-act races and optimistic concurrency** (the `xmin` row version at `AppDbContext.cs:79`): read [03 concurrency races](../../opusorganize/apprenticeship/curriculum/03-concurrency-races.md).
 4. **SignalR connections and groups:** read [08 realtime fan-out](../../opusorganize/apprenticeship/curriculum/08-realtime-fanout.md), then `src/NetIntercom.Api/Realtime/VisitorHub.cs`.
@@ -26,7 +28,7 @@ Do these first. Each one takes 30–60 minutes.
 6. **For the mid rungs:** [02 idempotency](../../opusorganize/apprenticeship/curriculum/02-idempotency.md), [01 outbox](../../opusorganize/apprenticeship/curriculum/01-transactional-outbox.md) and [06 caching](../../opusorganize/apprenticeship/curriculum/06-caching-correctness.md).
 
 ## Study route
-Twelve sessions. A ticket that takes longer than one sitting is split, so stop at the exit criterion and resume next time. Check out incident branches **in a worktree**, never on your main tree: `git worktree add ../ni-inc-004 training/incidents/004-widget-transcript-exposure`.
+Twelve sessions. A ticket that takes longer than one sitting is split, so stop at the exit criterion and resume next time. Check out incident branches **in a worktree**, never on your main tree (once they're pushed; see "Known state of main"): `git worktree add ../ni-inc-004 training/incidents/004-widget-transcript-exposure`.
 
 ### Session 1 — Read the system without running it (60 min)
 - **Files/branches:** `README.md`, `training/navigation/ARCHITECTURE.md`, `training/navigation/ONBOARDING.md`, `learn/00-onramp.md` exercises 1–4.
@@ -53,8 +55,8 @@ Twelve sessions. A ticket that takes longer than one sitting is split, so stop a
 - **Exit criterion:** a test that sends two concurrent close requests. It fails on `main` with a 500 and passes with a 409 after your fix. If Docker isn't available, write "integration UNVERIFIED" and show at least the unit-level mapping test passing.
 
 ### Session 5 — Security incidents 004 then 001 (90 min)
-- **Files/branches:** `training/incidents/004-widget-transcript-exposure.md` and `001-widget-note-leak.md`, plus their branches.
-- **Do by hand:** the diagnosis. Find the line on the branch that causes the symptom, using `git diff main..<branch>`, before you open any answer.
+- **Files/branches:** `training/incidents/004-widget-transcript-exposure.md` and `001-widget-note-leak.md`, plus their branches (not on GitHub yet, see the status note under "Known state of main").
+- **Do by hand:** the diagnosis. Find the line on the branch that causes the symptom, using `git diff main..<branch>`, before you open any answer. Without the branch: start from the code on `main` that the symptom points at (for 004, the ownership check in `src/NetIntercom.Application/Widget/WidgetQueries.cs:25-30`; for 001, the `if (!request.IsInternalNote)` guard around `LastMessagePreview` at `src/NetIntercom.Application/Conversations/SendAgentMessage.cs:60-64` and the visitor projection at `src/NetIntercom.Api/Realtime/RealtimeNotifier.cs:32-37`), and write down which change would produce the symptom.
 - **Delegate, then verify:** after you've diagnosed 004, do drill A in `learn/01-agentic-practice.md`: the agent writes the negative-test matrix and the fix from *your* spec.
 - **Exit criterion:** for each incident, a written one-paragraph root cause that matches `training/_answers/incident-00N.md`, plus the INC-004 negative-test matrix covering every widget endpoint and hub method.
 
@@ -106,7 +108,7 @@ Twelve sessions. A ticket that takes longer than one sitting is split, so stop a
 - You have one failing-then-passing test for a security bug (INC-004) and one for a realtime bug (M3).
 
 ## Next repo
-**modular-monolith-with-ddd** (`Desktop\.netarchitectureproject\modular-monolith-with-ddd`, READ tier). Its outbox/inbox between modules is the grown-up version of what NetIntercom's S3 asks you to design. After that comes eShop, then gitvg/atlas (B02).
+**modular-monolith-with-ddd** (kamilgrzybek/modular-monolith-with-ddd on GitHub, a read-only study repo). Its outbox/inbox between modules is the grown-up version of what NetIntercom's S3 asks you to design. After that comes eShop, then gitvg/atlas (B02).
 
 
 ## Extended current-source course

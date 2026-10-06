@@ -6,6 +6,8 @@ Each drill turns an existing `training/` incident or ticket into practice at dir
 3. **The agent implements** in a worktree (`git worktree add ../ni-drill-X <branch>`).
 4. **You review adversarially**, using the checklist at the bottom, then compare with the sealed rubric in [`_answers/01-agentic-practice.md`](_answers/01-agentic-practice.md).
 
+> **Status 2026-10-06:** drills A–C use `training/incidents/*` branches as their **Base**, and those branches aren't on GitHub (`git ls-remote origin` lists only `main`). From a clone, finish your hand diagnosis first, then re-create the incident change on a branch of your own (the answer file's "Root cause" section describes the diff), and run the drill against that branch. Drill D (base `main`) works as written. The concept-page links into `opusorganize/` point outside this repo.
+
 This extends `training/agentic/WORKFLOW.md` (the full M2 loop). Do that one in Session 8; these drills are shorter reps. Background reading: [05 verify before trust](../../opusorganize/apprenticeship/curriculum/05-verify-before-trust.md).
 
 ## Spec template (keep it under one page)
